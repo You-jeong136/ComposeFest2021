@@ -18,8 +18,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
 import com.codelab.layoutcodelab.ui.theme.LayoutCodeLabTheme
@@ -102,21 +107,21 @@ fun LayoutsCodelab() {
         }
     ){
         innerPadding ->
-        ScrollingList()
+        //ScrollingList()
         //ImageList()
         //LazyList()
-        //BodyContent(Modifier.padding(innerPadding))
+        BodyContent(Modifier.padding(innerPadding))
     }
 
 
 }
-@Composable
+/*@Composable
 fun BodyContent(modifier: Modifier = Modifier){
     Column( modifier = Modifier){
         Text(text = "Hi there!")
         Text(text = "Thanks for goind through the Layouts codelab")
     }
-}
+}*/
 
 @Composable
 fun SimpleList(){
@@ -193,6 +198,113 @@ fun ScrollingList() {
                 ImageListItem(it)
             }
         }
+    }
+}
+
+//compose layout 원칙 : compose ui는 다중-pass 측정을 허용하지 않는다.
+//레이아웃 요소가 다른 측정 요소들을 시도하기 위해 두번 이상 자식을 측정하지 않는다는 의미.
+// 단일 패스 측정이 성능도 좋고, compose가 deep ui tree 효율적 처리 가능
+
+/* //layout modifier : 요소를 측정, 배치하는 것을 수동으로 제어.
+//기본 구조
+    fun Modifier.customLayoutModifier(...) = Modifier.layout{ measurable, constraints ->
+        //measurable : 측정, 배치할 자식요소
+        //constraints : 자식의 너비/높이에 대한 최소최대값
+    }
+*/
+/*
+fun Modifier.firstBaselineToTop(
+    firstBaselineToTop : Dp
+) = this.then(
+    layout{ measurable, constraints ->
+        // 자녀 측정.
+        val placeable = measurable.measure(constraints)
+
+        check(placeable[FirstBaseline] != AlignmentLine.Unspecified)
+        val firstBaseline = placeable[FirstBaseline]
+
+        val placeableY = firstBaselineToTop.roundToPx() - firstBaseline
+        val height = placeable.height + placeableY
+
+        layout(placeable.width, height){
+            placeable.placeRelative(0, placeableY)
+        }
+
+    }
+)
+@Preview(showBackground = true)
+@Composable
+fun TextWithPaddingToBaselinePreview() {
+    LayoutCodeLabTheme {
+        Text("Hi there!", Modifier.firstBaselineToTop(32.dp))
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun TextWithNormalPaddingPreview() {
+    LayoutCodeLabTheme  {
+        Text("Hi there!", Modifier.padding(top = 32.dp))
+    }
+}
+*/
+
+//layout composable
+/*
+    //기본 구조 :
+@Composable
+fun CustomLayout(
+    modifier: Modifier = Modifier,
+    // custom layout attributes
+    content: @Composable () -> Unit
+) {
+    Layout(
+        modifier = modifier,
+        content = content
+    ) { measurables, constraints ->
+        // measure and position children given constraints logic here
+    }
+}
+*/
+@Composable
+fun MyOwnColumn(
+    modifier: Modifier = Modifier,
+    content : @Composable () -> Unit
+){
+    Layout(
+        modifier = modifier,
+        content = content
+    ) {  measurables, constraints ->
+            // Don't constrain child views further, measure them with given constraints
+            // List of measured children
+            val placeables = measurables.map { measurable ->
+                // Measure each child
+                measurable.measure(constraints)
+            }
+
+            // Track the y co-ord we have placed children up to
+            var yPosition = 0
+
+            // Set the size of the layout as big as it can
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                // Place children in the parent layout
+                placeables.forEach { placeable ->
+                    // Position item on the screen
+                    placeable.placeRelative(x = 0, y = yPosition)
+
+                    // Record the y co-ord placed up to
+                    yPosition += placeable.height
+                }
+            }
+    }
+
+}
+@Composable
+fun BodyContent(modifier: Modifier = Modifier) {
+    MyOwnColumn(modifier.padding(8.dp)) {
+        Text("MyOwnColumn")
+        Text("places items")
+        Text("vertically.")
+        Text("We've done it by hand!")
     }
 }
 
