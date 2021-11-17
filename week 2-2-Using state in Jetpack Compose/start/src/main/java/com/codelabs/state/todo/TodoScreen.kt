@@ -25,9 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -40,9 +38,9 @@ import kotlin.random.Random
 /**
  * Stateless component that is responsible for the entire todo screen.
  *
- * @param items (state) list of [TodoItem] to display
- * @param onAddItem (event) request an item be added
- * @param onRemoveItem (event) request an item be removed
+ * @param items (state) list of [TodoItem] to display : 화면에 표시할 항목 목록
+ * @param onAddItem (event) request an item be added : 사용자 항목 추가 시 이벤트
+ * @param onRemoveItem (event) request an item be removed : 사용자 항목 제거 시 이벤트
  */
 @Composable
 fun TodoScreen(
@@ -84,7 +82,16 @@ fun TodoScreen(
  * @param modifier modifier for this element
  */
 @Composable
-fun TodoRow(todo: TodoItem, onItemClicked: (TodoItem) -> Unit, modifier: Modifier = Modifier) {
+fun TodoRow(
+    todo: TodoItem,
+    onItemClicked: (TodoItem) -> Unit,
+    modifier: Modifier = Modifier,
+    iconAlpha : Float = remember(todo.id){ randomTint() }
+    //여기서 (.id)값이 key, 람다의 randomTint()가 기억될 값으로 저장.
+    //이때 컴포저블의 재구성은 멱등원이여야한다. (연산을 여러번 반복해도 결과가 달라지지 않음)
+    //이를 통해 아이템의 상태가 바뀌지 않는한, 재구성 시 random 계산을 스킵할 수 있게 됨.
+    //또한 색조를 매개변수로 이동하여, 호출자가 값을 제어하도록 만들 수 있음.
+) {
     Row(
         modifier = modifier
             .clickable { onItemClicked(todo) }
@@ -94,7 +101,9 @@ fun TodoRow(todo: TodoItem, onItemClicked: (TodoItem) -> Unit, modifier: Modifie
         Text(todo.task)
         Icon(
             imageVector = todo.icon.imageVector,
+            tint = LocalContentColor.current.copy(alpha = iconAlpha),
             contentDescription = stringResource(id = todo.icon.contentDescription)
+            //localContentColor : 아이콘 및 폰트 등의 콘텐츠에 선호 색상 제공
         )
     }
 }
