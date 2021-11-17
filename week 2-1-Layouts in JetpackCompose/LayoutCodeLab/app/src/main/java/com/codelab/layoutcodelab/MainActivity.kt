@@ -14,10 +14,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.Layout
@@ -298,13 +300,124 @@ fun MyOwnColumn(
     }
 
 }
+
+//layouts codelab _ 8
+@Composable
+fun StaggeredGrid(
+    //rows : 그리드 _ 재사용 / 화면에 표시하려는 행 수를 매개변수로 전달.
+    modifier: Modifier = Modifier,
+    rows: Int = 3,
+    content: @Composable () -> Unit
+) {
+    Layout(
+        modifier = modifier,
+        content = content
+    ) { measurables, constraints ->
+
+        //자녀 측정 : 한번만 가능. _ 자녀 각 행의 width / hegith 최대 측정
+
+        //각 행의 너비와 높이의 추적/기록하기. keep track of~
+        val rowWidths = IntArray(rows) { 0 }
+        val rowHeights = IntArray(rows) { 0 }
+
+        val placeables = measurables.mapIndexed { index, measurable ->
+            //각 자식 측정
+            val placeable = measurable.measure(constraints)
+
+            //각 행의 너비 기록하고, 각 행의 높이 최대값 기록하기.
+            val row = index % rows
+            rowWidths[row] += placeable.width
+            rowHeights[row] = Math.max(rowHeights[row], placeable.height)
+
+            placeable
+        }
+
+        //grid의 너비는 제일 넓은 행
+        val width = rowWidths.maxOrNull()
+            ?.coerceIn(constraints.minWidth.rangeTo(constraints.maxWidth)) ?: constraints.minWidth
+
+        //grid의 높이는 각 행에서 가장 긴 놈들의 합.
+        //높이 제약조건은 강제됨.
+        val height = rowHeights.sumOf { it }
+            .coerceIn(constraints.minHeight.rangeTo(constraints.maxHeight))
+
+        //그리드의 크기를 계산, 각 행의 최대 높이를 앎으로 각 행의 요소를 y 측에 배치할 위치 계산 가능.
+        //각 행의 y는 이전 행의 누적 높이를 기준으로 함
+        val rowY = IntArray(rows) { 0 }
+        for (i in 1 until rows) {
+            rowY[i] = rowY[i-1] + rowHeights[i-1]
+        }
+
+        //placeable.placeRelative(x, y)를 호출해 자식을 배치
+        //이때 여기서는 rowX라는 각행의 x좌표도 추적가능.
+        layout(width, height) {
+            // x cord we have placed up to, per row
+            val rowX = IntArray(rows) { 0 }
+
+            placeables.forEachIndexed { index, placeable ->
+                val row = index % rows
+                placeable.placeRelative(
+                    x = rowX[row],
+                    y = rowY[row]
+                )
+                rowX[row] += placeable.width
+            }
+        }
+    }
+
+}
+
+@Composable
+fun Chip(modifier: Modifier = Modifier, text: String) {
+    Card(
+        modifier = modifier,
+        border = BorderStroke(color = Color.Black, width = Dp.Hairline),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp, 16.dp)
+                    .background(color = MaterialTheme.colors.secondary)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(text = text)
+        }
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun ChipPreview(){
+    LayoutCodeLabTheme {
+        Chip(text = "Hi there")
+    }
+}
+
+val topics = listOf(
+    "Arts & Crafts", "Beauty", "Books", "Business", "Comics", "Culinary",
+    "Design", "Fashion", "Film", "History", "Maths", "Music", "People", "Philosophy",
+    "Religion", "Social sciences", "Technology", "TV", "Writing"
+)
+
 @Composable
 fun BodyContent(modifier: Modifier = Modifier) {
-    MyOwnColumn(modifier.padding(8.dp)) {
+    /*MyOwnColumn(modifier.padding(8.dp)) {
         Text("MyOwnColumn")
         Text("places items")
         Text("vertically.")
         Text("We've done it by hand!")
+    }*/
+    //topic 화면 밖으로 나갈 경우를 대비, 스크롤 가능 항목으로 한번 랩핑하기.
+    Row(modifier = modifier.horizontalScroll(rememberScrollState())) {
+        //행수 rows로 바꿀 수 있음, 없으면 rows = 3
+        StaggeredGrid(modifier = modifier, rows = 5) {
+            for (topic in topics) {
+                Chip(modifier = Modifier.padding(8.dp), text = topic)
+            }
+        }
     }
 }
 
@@ -316,11 +429,11 @@ fun PhotographerCardPreview(){
    }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun LayoutsCodelabPreview() {
     LayoutCodeLabTheme {
-        LayoutsCodelab()
+        BodyContent()
     }
 }
 
