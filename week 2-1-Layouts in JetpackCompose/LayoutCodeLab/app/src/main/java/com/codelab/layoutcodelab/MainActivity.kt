@@ -20,14 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.FirstBaseline
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.ConstraintSet
+import androidx.constraintlayout.compose.Dimension
+import androidx.constraintlayout.compose.layoutId
 import coil.compose.rememberImagePainter
 import com.codelab.layoutcodelab.ui.theme.LayoutCodeLabTheme
 import kotlinx.coroutines.launch
@@ -276,24 +278,18 @@ fun MyOwnColumn(
         modifier = modifier,
         content = content
     ) {  measurables, constraints ->
-            // Don't constrain child views further, measure them with given constraints
-            // List of measured children
+
+            //각 자녀 측정,
             val placeables = measurables.map { measurable ->
-                // Measure each child
                 measurable.measure(constraints)
             }
-
-            // Track the y co-ord we have placed children up to
             var yPosition = 0
 
-            // Set the size of the layout as big as it can
+            // 레이아웃의 사이즈를 이것이 클 수 있는 만큼으로 지정.
             layout(constraints.maxWidth, constraints.maxHeight) {
-                // Place children in the parent layout
+                // 부모 레이아웃 안에 자식 배치
                 placeables.forEach { placeable ->
-                    // Position item on the screen
                     placeable.placeRelative(x = 0, y = yPosition)
-
-                    // Record the y co-ord placed up to
                     yPosition += placeable.height
                 }
             }
@@ -388,13 +384,6 @@ fun Chip(modifier: Modifier = Modifier, text: String) {
         }
     }
 }
-@Preview(showBackground = true)
-@Composable
-fun ChipPreview(){
-    LayoutCodeLabTheme {
-        Chip(text = "Hi there")
-    }
-}
 
 val topics = listOf(
     "Arts & Crafts", "Beauty", "Books", "Business", "Comics", "Culinary",
@@ -410,8 +399,18 @@ fun BodyContent(modifier: Modifier = Modifier) {
         Text("vertically.")
         Text("We've done it by hand!")
     }*/
-    //topic 화면 밖으로 나갈 경우를 대비, 스크롤 가능 항목으로 한번 랩핑하기.
-    Row(modifier = modifier.horizontalScroll(rememberScrollState())) {
+
+    Row(
+        //수정자 순서 _ 강조. : modifier에서 순서 중요.
+        //차례대로 처리하게 때문에, padding, size 등의 명령 순서에 따라
+        // 결과문이 크게 바뀜.
+        //row_horizontalScroll : topic 화면 밖으로 나갈 경우를 대비, 스크롤 가능 항목으로 한번 랩핑하기.
+        modifier = modifier
+            .background(color = Color.LightGray)
+            .padding(16.dp)
+            .size(200.dp)
+            .horizontalScroll(rememberScrollState())
+    ) {
         //행수 rows로 바꿀 수 있음, 없으면 rows = 3
         StaggeredGrid(modifier = modifier, rows = 5) {
             for (topic in topics) {
@@ -421,6 +420,130 @@ fun BodyContent(modifier: Modifier = Modifier) {
     }
 }
 
+//layouts _ 코드랩 9 : constraint
+@Composable
+fun ConstraintLayoutContent(){
+    ConstraintLayout {
+        //제약 걸 수 있는 composables 참조 만들기
+        val (button1, button2, text) = createRefs()
+
+        Button(
+            onClick = {/* do something*/},
+            modifier = Modifier.constrainAs(button1){
+                top.linkTo(parent.top, margin = 16.dp)
+            }
+        ) {
+            Text("Button1")
+        }
+
+        Text("Text", Modifier.constrainAs(text){
+            top.linkTo(button1.bottom, margin = 16.dp)
+            centerAround(button1.end)
+        })
+
+        val barrier = createEndBarrier(button1, text)
+        Button(
+            onClick = {/* do something*/},
+            modifier = Modifier.constrainAs(button2){
+                top.linkTo(parent.top, margin = 16.dp)
+                start.linkTo(barrier)
+            }
+        ){
+            Text("Button2")
+        }
+    }
+}
+@Composable
+fun LargeConstraintLayout() {
+    ConstraintLayout {
+        val text = createRef()
+
+        val guideline = createGuidelineFromStart(fraction = 0.5f)
+        Text(
+            "This is a very very very very very very very long text",
+            Modifier.constrainAs(text) {
+                linkTo(start = guideline, end = parent.end)
+                width = Dimension.preferredWrapContent
+            }
+        )
+    }
+}
+@Composable
+fun DecoupledConstraintLayout() {
+    BoxWithConstraints {
+        val constraints = if (maxWidth < maxHeight) {
+            decoupledConstraints(margin = 16.dp) // Portrait constraints
+        } else {
+            decoupledConstraints(margin = 32.dp) // Landscape constraints
+        }
+
+        ConstraintLayout(constraints) {
+            Button(
+                onClick = { /* Do something */ },
+                modifier = Modifier.layoutId("button")
+            ) {
+                Text("Button")
+            }
+
+            Text("Text", Modifier.layoutId("text"))
+        }
+    }
+}
+//인라인에 제약 걸지 않고, 함수로 분리해주기.
+private fun decoupledConstraints(margin: Dp): ConstraintSet {
+    return ConstraintSet {
+        val button = createRefFor("button")
+        val text = createRefFor("text")
+
+        constrain(button) {
+            top.linkTo(parent.top, margin= margin)
+        }
+        constrain(text) {
+            top.linkTo(button.bottom, margin)
+        }
+    }
+}
+
+//codelab _ 11 : intrinsics (내재)
+//compose 자녀 한번만 측정 가능, 측정 전 자녀 정보 필요 시 intrinsics 사용 / 실제 측정 전 자식 쿼리 가능
+//ex _ (min/max)intrinsicsWidth / intrinicsHeight : ~ 높이/너비 주어질 경우 콘텐츠를 적절하게 칠할 최소/최대 너비/높이는 얼마?
+@Composable
+fun TwoTexts(modifier: Modifier = Modifier, text1: String, text2: String) {
+    Row(modifier = modifier.height(IntrinsicSize.Min)) {
+        Text(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 4.dp)
+                .wrapContentWidth(Alignment.Start),
+            text = text1
+        )
+
+        Divider(color = Color.Black, modifier = Modifier.fillMaxHeight().width(1.dp))
+        Text(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 4.dp)
+                .wrapContentWidth(Alignment.End),
+            text = text2
+        )
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun TwoTextsPreview() {
+    LayoutCodeLabTheme  {
+        Surface {
+            TwoTexts(text1 = "Hi", text2 = "there")
+        }
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun ConstraintLayoutContentPreview() {
+    LayoutCodeLabTheme {
+        DecoupledConstraintLayout()
+    }
+}
 @Preview(showBackground = true)
 @Composable
 fun PhotographerCardPreview(){
@@ -442,5 +565,13 @@ fun LayoutsCodelabPreview() {
 fun DefaultPreview() {
     LayoutCodeLabTheme {
         Greeting("Android")
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChipPreview(){
+    LayoutCodeLabTheme {
+        Chip(text = "Hi there")
     }
 }
