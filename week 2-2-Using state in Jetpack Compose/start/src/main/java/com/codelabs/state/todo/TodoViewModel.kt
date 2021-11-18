@@ -16,22 +16,60 @@
 
 package com.codelabs.state.todo
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class TodoViewModel : ViewModel() {
+    //livedata를 지우고, mutableStateListOf로 대체
+    /*private var _todoItems = MutableLiveData(listOf<TodoItem>())
+    val todoItems: LiveData<List<TodoItem>> = _todoItems*/
 
-    private var _todoItems = MutableLiveData(listOf<TodoItem>())
-    val todoItems: LiveData<List<TodoItem>> = _todoItems
+    //state : todoItems
+    var todoItems = mutableStateListOf<TodoItem>()
+        private set //the setter is private and has the default implementation
+    //private set을 이용, todoItems의 상태 객체를 set하는 것을 viewModel 내부에서만 볼 개인설정으로 제한
+
+    //private state
+    private var currentEditPosition by mutableStateOf(-1)
+
+    //state _ 얘가 계속 관찰하다 todoItems나 currentEditPosition이 변경될 경우, 컴포저블이 호출됨.
+    val currentEditItem : TodoItem?
+        get() = todoItems.getOrNull(currentEditPosition)
 
     fun addItem(item: TodoItem) {
-        _todoItems.value = _todoItems.value!! + listOf(item)
+        todoItems.add(item)
     }
 
     fun removeItem(item: TodoItem) {
-        _todoItems.value = _todoItems.value!!.toMutableList().also {
-            it.remove(item)
-        }
+        todoItems.remove(item)
+        onEditDone()
     }
+
+    //아래 이벤트
+    // event: onEditItemSelected
+    fun onEditItemSelected(item: TodoItem) {
+        currentEditPosition = todoItems.indexOf(item)
+    }
+
+    // event: onEditDone
+    fun onEditDone() {
+        currentEditPosition = -1
+    }
+
+    // event: onEditItemChange
+    fun onEditItemChange(item: TodoItem) {
+        val currentItem = requireNotNull(currentEditItem)
+        require(currentItem.id == item.id) {
+            "You can only change an item with the same id as currentEditItem"
+        }
+
+        todoItems[currentEditPosition] = item
+    }
+
+
 }

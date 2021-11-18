@@ -45,16 +45,23 @@ class TodoActivity : AppCompatActivity() {
     @Composable
     private fun TodoActivityScreen(todoViewModel: TodoViewModel){
 
+        /*
         //todoViewModel.todoItems는 viewModel의 liveData<List<ToDoItem>
         //observeAsState를 통해 liveData<T>를 관찰하고 이를 State<T>로 변환
         //이를 통해 compose는 값의 변화를 반영할 수 있음.
         //listOf()는 livedata 초기화되기 전 null 허용x로 넣은것. nullable하다면 items : List<TodoItem>?
         val items : List<TodoItem> by todoViewModel.todoItems.observeAsState(listOf())
+        */
 
         TodoScreen(
-            items = items,
-            onAddItem = {todoViewModel.addItem(it)},
-            onRemoveItem = {todoViewModel.removeItem(it)}
+            //items = items,
+            items = todoViewModel.todoItems,
+            currentlyEditing = todoViewModel.currentEditItem,
+            onAddItem = todoViewModel::addItem,
+            onRemoveItem = todoViewModel::removeItem,
+            onStartEdit = todoViewModel::onEditItemSelected,
+            onEditItemChange = todoViewModel::onEditItemChange,
+            onEditDone = todoViewModel::onEditDone
         )
     }
 }
