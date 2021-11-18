@@ -326,6 +326,7 @@ fun StaggeredGrid(
             rowHeights[row] = Math.max(rowHeights[row], placeable.height)
 
             placeable
+            //lamda : 마지막 줄이 리턴 값!
         }
 
         //grid의 너비는 제일 넓은 행
