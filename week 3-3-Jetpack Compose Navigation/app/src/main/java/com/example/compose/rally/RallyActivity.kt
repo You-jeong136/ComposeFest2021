@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.compose.rally.ui.components.RallyTabRow
 import com.example.compose.rally.ui.theme.RallyTheme
 import com.example.compose.rally.data.UserData
@@ -79,7 +80,7 @@ fun RallyApp() {
                 )
             }
         ) { innerPadding ->
-            val accountsName = RallyScreen.Accounts.name
+
             NavHost(
                 navController = navController,
                 startDestination = Overview.name,
@@ -105,13 +106,21 @@ fun RallyApp() {
                     BillsBody(bills = UserData.bills)
                 }
 
+                val accountsName = Accounts.name
+                
                 composable(
                     "$accountsName/{name}",
                     arguments = listOf(
-                        navArgument("name"){
+                        navArgument("name") {
                             type = NavType.StringType
                         }
-                    )
+                    ),
+                    //navDeepLink 이용 _ deepLinks 목록 추가.
+                    //uriPattern을 전달, intent filter에 매칭하는 uri를 제공
+                    //adb 이용하여 테스트 가능.
+                    deepLinks =  listOf(navDeepLink {
+                        uriPattern = "rally://$accountsName/{name}"
+                    })
                 ) { entry ->
                     //navBackStackEnrty의 매개 중 name
                     val accountName = entry.arguments?.getString("name")

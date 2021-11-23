@@ -34,6 +34,17 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- 딥 링크 정의 : 여기서 URL : rally://accounts/{name}
+                +) 딥링크 란 : 홈페이지가 아닌 특정 콘텐츠로 바로 연결되는 링크로서
+                안드로이드에서는 사용자가 안드로이드앱에서 특정 활동을 지정할 수 있도록 하는
+                인텐트 필터를 이야기함.
+             -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="rally" android:host="accounts" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>
