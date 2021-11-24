@@ -80,61 +80,72 @@ fun RallyApp() {
                 )
             }
         ) { innerPadding ->
-
-            NavHost(
+            RallyNavHost(
                 navController = navController,
-                startDestination = Overview.name,
                 modifier = Modifier.padding(innerPadding)
-            ) {
-
-                composable(Overview.name) {
-                    OverviewBody(
-                        onClickSeeAllAccounts = { navController.navigate(Accounts.name) },
-                        onClickSeeAllBills = { navController.navigate(Bills.name) },
-                        onAccountClick = { name -> navigateToSingleAccount(navController, name) },
-                    )
-                }
-                composable(Accounts.name) {
-                    AccountsBody(accounts = UserData.accounts) { name ->
-                        navigateToSingleAccount(
-                            navController = navController,
-                            accountName = name
-                        )
-                    }
-                }
-                composable(Bills.name) {
-                    BillsBody(bills = UserData.bills)
-                }
-
-                val accountsName = Accounts.name
-                
-                composable(
-                    "$accountsName/{name}",
-                    arguments = listOf(
-                        navArgument("name") {
-                            type = NavType.StringType
-                        }
-                    ),
-                    //navDeepLink 이용 _ deepLinks 목록 추가.
-                    //uriPattern을 전달, intent filter에 매칭하는 uri를 제공
-                    //adb 이용하여 테스트 가능.
-                    deepLinks =  listOf(navDeepLink {
-                        uriPattern = "rally://$accountsName/{name}"
-                    })
-                ) { entry ->
-                    //navBackStackEnrty의 매개 중 name
-                    val accountName = entry.arguments?.getString("name")
-                    val account = UserData.getAccount(accountName)
-
-                    //account를 singleAccountBody로 보냄 _ accounts패키지에 구현
-                    SingleAccountBody(account = account)
-                }
-
-
-            }
+            )
         }
     }
 }
+//navhost 추출 -> navController 내부에 만들지 않음으로서 RallyApp 내에서 상위 구조 탭을 가짐
+// -> 탭 선택 시 이를 계속 사용 가능.
+@Composable
+fun RallyNavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Overview.name,
+        modifier = modifier
+    ) {
+
+        composable(Overview.name) {
+            OverviewBody(
+                onClickSeeAllAccounts = { navController.navigate(Accounts.name) },
+                onClickSeeAllBills = { navController.navigate(Bills.name) },
+                onAccountClick = { name -> navigateToSingleAccount(navController, name) },
+            )
+        }
+        composable(Accounts.name) {
+            AccountsBody(accounts = UserData.accounts) { name ->
+                navigateToSingleAccount(
+                    navController = navController,
+                    accountName = name
+                )
+            }
+        }
+        composable(Bills.name) {
+            BillsBody(bills = UserData.bills)
+        }
+
+        val accountsName = Accounts.name
+
+        composable(
+            "$accountsName/{name}",
+            arguments = listOf(
+                navArgument("name") {
+                    type = NavType.StringType
+                }
+            ),
+            //navDeepLink 이용 _ deepLinks 목록 추가.
+            //uriPattern을 전달, intent filter에 매칭하는 uri를 제공
+            //adb 이용하여 테스트 가능.
+            deepLinks = listOf(navDeepLink {
+                uriPattern = "rally://$accountsName/{name}"
+            })
+        ) { entry ->
+            //navBackStackEnrty의 매개 중 name
+            val accountName = entry.arguments?.getString("name")
+            val account = UserData.getAccount(accountName)
+
+            //account를 singleAccountBody로 보냄 _ accounts패키지에 구현
+            SingleAccountBody(account = account)
+        }
+
+    }
+}
+
 private fun navigateToSingleAccount(
     navController: NavHostController,
     accountName: String
