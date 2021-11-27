@@ -42,12 +42,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
         useIR = true
     }
     buildFeatures {
         dataBinding true
-        compose true
+        compose true //compose와 함께 작동~
     }
     composeOptions {
         kotlinCompilerExtensionVersion rootProject.composeVersion
