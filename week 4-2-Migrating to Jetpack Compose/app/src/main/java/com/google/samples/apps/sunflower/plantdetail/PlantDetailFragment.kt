@@ -21,6 +21,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.material.MaterialTheme
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ShareCompat
 import androidx.core.widget.NestedScrollView
@@ -106,6 +108,26 @@ class PlantDetailFragment : Fragment() {
                     else -> false
                 }
             }
+
+            //composition은 compose ui 유형이 상태를 저장, 프래그먼트의 view 수명 주기를 따라야함.
+            // 단 창 전환이 발생 시 ui 요소를 화면에 유지.
+            /* 요소 삭제 : 수동 > AbstractComposeView.disposeComposition
+                자동 > setViewCompositionStrategy ( 혹은 폐기 전략 설정
+            * */
+            composeView.apply{
+                //해당 lifecycleOwner가 소멸되면 컴포지션을 삭제해줌.
+                setViewCompositionStrategy(
+                    ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+                    // 폐기 전략 중 fragment의 lifecycle이 파괴 시 삭제하는 전략
+                )
+                //xml에 파일에서 정의해둔 composeView 호출, setContent 직접 엑세스하여 compose 코드 표시
+                setContent {
+                    MaterialTheme {
+                        PlantDetailDescription(plantDetailViewModel)
+                    }
+                }
+            }
+
         }
         setHasOptionsMenu(true)
 
