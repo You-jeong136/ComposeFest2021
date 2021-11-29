@@ -92,6 +92,7 @@ dependencies {
     implementation "androidx.compose.runtime:runtime-livedata:$rootProject.composeVersion"
     implementation "androidx.compose.ui:ui-tooling:$rootProject.composeVersion"
 
+    //compose _ Inetrop 테마 : View 시스템 MDC 테마를 재사용.
     implementation "com.google.android.material:compose-theme-adapter:$rootProject.materialComposeAdapterVersion"
 
     // Testing dependencies
