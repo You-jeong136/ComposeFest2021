@@ -154,4 +154,22 @@ class TopAppBarTest {
 
     }
 
+    //codelab 7
+    @Test
+    fun rallyTopAppBarTest_clickTabs(){
+        var currentScreen:RallyScreen = RallyScreen.Overview // 현재 상태
+        //컴포즈 테스트 룰에 RallyApp 설정하기
+        composeTestRule.setContent {
+            RallyApp(currentScreen){ screen-> currentScreen = screen }
+        }
+
+        // 모든 탭을 순회하면서 클릭 하고 현재 상태를 확인한다.
+        RallyScreen.values().forEach { screen->
+            composeTestRule
+                .onNodeWithContentDescription(screen.name)
+                .performClick()
+            assert(currentScreen == screen)
+        }
+    }
+
 }

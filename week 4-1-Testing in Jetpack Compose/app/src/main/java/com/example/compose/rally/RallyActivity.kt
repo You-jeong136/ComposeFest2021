@@ -39,27 +39,39 @@ class RallyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            RallyApp()
+            //RallyApp()
+            var currentScreen:RallyScreen by rememberSaveable { mutableStateOf(RallyScreen.Overview) }
+            RallyApp(currentScreen){
+                    screen-> currentScreen = screen
+            }
         }
     }
 }
-
+/*코드랩 7 : 다른 탭 선택 시 RallyTopAppBar 선택사항이 변경되는지 확인 테스트
+힌트 : 테스트 범위는 RallyApp이 소유한, 상태를 포함해야한다.
+행동이 아닌 상태를 확인. UI 상태에 대한 assertion 사용하자.
+*/
 @Composable
-fun RallyApp() {
+fun RallyApp(currentScreen:RallyScreen, onTabSelected: (RallyScreen) -> Unit) {
     RallyTheme {
         val allScreens = RallyScreen.values().toList()
-        var currentScreen by rememberSaveable { mutableStateOf(RallyScreen.Overview) }
+
+        //currentScreen : stateful임. 이거에 따라 RallyTopAppBar 영향 받음. 테스트하기 쉽게 state hoisting
+        // state hoisting : 상태를 끌어올리기 위한 패턴, 컴포저브 함수 내 선언된 상태변수를 해당 컴포저블 함수의 두개의 매개변수로 바꾸는 것.
+        // value : T _ 표시할 현재값. onValueChange : (T) -> Unit : T가 새 값일 경우 이를 변경 요청 이벤트
+        // var currentScreen by rememberSaveable { mutableStateOf(RallyScreen.Overview) }
         Scaffold(
             topBar = {
                 RallyTopAppBar(
                     allScreens = allScreens,
-                    onTabSelected = { screen -> currentScreen = screen },
+                    //onTabSelected = { screen -> currentScreen = screen },
+                    onTabSelected = onTabSelected,
                     currentScreen = currentScreen
                 )
             }
         ) { innerPadding ->
             Box(Modifier.padding(innerPadding)) {
-                currentScreen.content(onScreenChange = { screen -> currentScreen = screen })
+                currentScreen.content(onScreenChange = onTabSelected)
             }
         }
     }
